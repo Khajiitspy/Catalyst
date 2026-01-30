@@ -1,0 +1,38 @@
+version: "3.9"
+
+networks:
+  SecondWind:
+    driver: bridge
+
+services:
+  db:
+    image: postgres:17
+    container_name: secondwind-db-container
+    restart: unless-stopped
+    ports:
+      - "5192:5432"
+    environment:
+      POSTGRES_DB: secondwind-db
+      POSTGRES_USER: secondwind-user
+      POSTGRES_PASSWORD: sld@sdk&sdf@@kd*djsLLDK
+    volumes:
+      - /data/secondwind/postgres:/var/lib/postgresql/data
+    networks:
+      - secondwind_net
+
+  api:
+    image: magicabyss/secondwind-api:latest
+    container_name: secondwind-api-container
+    restart: unless-stopped
+    volumes:
+      - /data/secondwind/images:/app/images
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: Host=db;Database=secondwind-db;Port=5192;Username=secondwind-user;Password=sld@sdk&sdf@@kd*djsLLDK
+    ports:
+      - "127.0.0.1:3589:8080"
+    depends_on:
+      - db
+    networks:
+      - secondwind_net
+ 
