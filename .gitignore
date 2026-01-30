@@ -1,11 +1,17 @@
 # Rust
 target/
 **/target/
-**/*.rs.bk
 
-# Env files
+# Node / frontend
+node_modules/
+dist/
+build/
+
+# Env
 .env
+.env.*
 
-# OS junk
+# OS
 .DS_Store
+
 
