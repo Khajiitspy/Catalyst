@@ -23,6 +23,20 @@ pub fn create_token(user_id: Uuid, secret: &str) -> Result<String> {
     encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_ref()))
 }
 
+pub fn decode_token(
+    token: &str,
+    secret: &str,
+) -> jsonwebtoken::errors::Result<Claims> {
+    let data = decode::<Claims>(
+        token,
+        &DecodingKey::from_secret(secret.as_bytes()),
+        &Validation::default(),
+    )?;
+
+    Ok(data.claims)
+}
+
+
 pub fn verify_token(token: &str, secret: &str) -> Result<TokenData<Claims>> {
     decode::<Claims>(token, &DecodingKey::from_secret(secret.as_ref()), &Validation::default())
 }

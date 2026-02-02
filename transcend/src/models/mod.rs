@@ -1,3 +1,9 @@
 pub mod user;
+pub mod role;
+pub mod user_role;
 pub mod message;
 pub mod chat;
+pub mod chat_type;
+pub mod chat_user;
+pub mod chat_message_read;
+pub mod chat_message;

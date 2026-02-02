@@ -36,6 +36,6 @@ pub struct User {
     pub last_name: String,
     pub email: String,
     pub password_hash: String,
-    pub image_filename: Option<String>, // <--- new field
+    pub image: Option<String>,
     pub created_at: DateTime<Utc>,
 }

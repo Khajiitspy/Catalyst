@@ -16,7 +16,7 @@ impl UserRepository {
     ) -> Result<Option<User>, sqlx::Error> {
         sqlx::query_as::<_, User>(
             r#"
-            SELECT id, first_name, last_name, email, password_hash, created_at, image_filename
+            SELECT id, first_name, last_name, email, password_hash, created_at, image
             FROM users
             WHERE email = $1
             "#
@@ -32,18 +32,18 @@ impl UserRepository {
         last_name: &str,
         email: &str,
         password_hash: &str,
-        image_filename: Option<&str>,
+        image: Option<&str>,
     ) -> Result<User, sqlx::Error> {
         let rec = sqlx::query_as::<_, User>(
-            "INSERT INTO users (first_name, last_name, email, password_hash, image_filename)
+            "INSERT INTO users (first_name, last_name, email, password_hash, image)
              VALUES ($1, $2, $3, $4, $5)
-             RETURNING id, first_name, last_name, email, password_hash, image_filename, created_at"
+             RETURNING id, first_name, last_name, email, password_hash, image, created_at"
         )
         .bind(first_name)
         .bind(last_name)
         .bind(email)
         .bind(password_hash)
-        .bind(image_filename)
+        .bind(image)
         .fetch_one(&self.pool)
         .await?;
 

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+</head>
+<body>
+    <button onclick="connect()">Connect</button>
+    <button onclick="join()">Join Chat</button>
+    <button onclick="send()">Send</button>
+
+    <input type="text" name="message" id="message" value="" />
+
+    <pre id="log"></pre>
+
+    	<script>
+    	let socket;
+
+    	function connect() {
+    	    socket = new WebSocket("ws://localhost:5240/ws/chat?token=JWT_HERE");
+
+    	    socket.onmessage = e => {
+    	        console.log("📩", e.data);
+    	    };
+    	}
+
+    	function join() {
+    	    socket.send(JSON.stringify({
+    	        type: "JoinChat",
+    	        chat_id: "UUID_HERE"
+    	    }));
+    	}
+
+    	function send() {
+    	    socket.send(JSON.stringify({
+    	        type: "SendMessage",
+    	        chat_id: "UUID_HERE",
+    	        message: document.getElementById("message").value
+    	    }));
+    }
+    </script>
+</body>
+</html>

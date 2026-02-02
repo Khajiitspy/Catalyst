@@ -5,6 +5,7 @@ mod db;
 mod handlers;
 mod models;
 mod utils;
+mod ws;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -20,10 +21,16 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
+
+            // 🔹 REST API
             .service(
                 web::scope("/api")
                     .configure(handlers::users::config)
+                    .configure(handlers::chats::config)
             )
+
+            // 🔹 WebSocket / SignalR-style hub
+            .configure(|cfg| ws::config(cfg, web::Data::new(pool.clone())))
     })
     .bind(("0.0.0.0", 5240))?
     .run()

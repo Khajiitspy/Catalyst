@@ -27,7 +27,7 @@ pub async fn register(
     let mut last_name: Option<String> = None;
     let mut email: Option<String> = None;
     let mut password: Option<String> = None;
-    let mut image_filename: Option<String> = None;
+    let mut image: Option<String> = None;
 
     println!("➡️ Parsing multipart...");
     while let Some(field_result) = payload.next().await {
@@ -51,7 +51,7 @@ pub async fn register(
                 f.write_all(&bytes).map_err(|_| ApiError::InternalServerError)?;
             }
 
-            image_filename = Some(safe_filename);
+            image = Some(safe_filename);
         } else {
             let mut data = Vec::new();
             while let Some(chunk) = field.next().await {
@@ -76,7 +76,7 @@ pub async fn register(
         last_name,
         email,
         password.is_some(),
-        image_filename
+        image
     );
 
     let first_name = first_name.ok_or(ApiError::ValidationError("firstName missing".into()))?;
@@ -106,7 +106,7 @@ pub async fn register(
         &register_user.last_name,
         &register_user.email,
         &password_hash,
-        image_filename.as_deref(),
+        image.as_deref(),
     )
     .await
     .map_err(|e| {
