@@ -5,7 +5,7 @@ use uuid::Uuid;
 use actix::AsyncContext;
 use sqlx::PgPool;
 
-use super::chat_server::{ChatServer, Join, Broadcast};
+use super::chat_server::{ChatServer, Join, Broadcast, Leave};
 use super::messages::{ClientWsMessage, WsMessage};
 use crate::db::chat_repository::ChatRepository;
 
@@ -71,6 +71,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatSocket {
                     }
 
                     ClientWsMessage::LeaveChat { chat_id } => {
+                        self.server.do_send(Leave {
+                            chat_id,
+                            addr: ctx.address().recipient(),
+                        });
                     }
                 }
             }

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use actix::Message;
+use actix::Recipient;
 
 #[derive(Deserialize)]
 #[serde(tag = "type")]
@@ -18,5 +19,11 @@ pub struct ServerWsMessage<T> {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct WsMessage(pub String);
+pub struct Leave {
+    pub chat_id: Uuid,
+    pub addr: Recipient<WsMessage>,
+}
 
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct WsMessage(pub String);

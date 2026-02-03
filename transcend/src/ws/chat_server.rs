@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use super::messages::WsMessage;
+pub use crate::ws::messages::Leave;
 
 #[derive(Message)]
 #[rtype(result = "()")]
@@ -42,6 +43,21 @@ impl Handler<Join> for ChatServer {
             .entry(msg.chat_id)
             .or_default()
             .insert(msg.addr);
+    }
+}
+
+impl Handler<Leave> for ChatServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: Leave, _: &mut Context<Self>) {
+        if let Some(room) = self.rooms.get_mut(&msg.chat_id) {
+            room.remove(&msg.addr);
+
+            // optional cleanup
+            if room.is_empty() {
+                self.rooms.remove(&msg.chat_id);
+            }
+        }
     }
 }
 
