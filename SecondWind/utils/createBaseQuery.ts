@@ -1,26 +1,17 @@
-import {
-  fetchBaseQuery,
-  BaseQueryFn,
-  FetchArgs,
-  FetchBaseQueryError
-} from "@reduxjs/toolkit/query/react";
+import { fetchBaseQuery } from "@reduxjs/toolkit/query";
+import type { RootState } from "@/store";
 import { BASE_URL } from "@/constants/Urls";
 
-export const createBaseQuery = (
-  endpoint: string
-): BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> => {
+export const createBaseQuery = (endpoint: string) =>
+    fetchBaseQuery({
+        baseUrl: `${BASE_URL}/api/${endpoint}/`,
+        prepareHeaders: (headers, { getState }) => {
+            const token = (getState() as RootState).auth.user?.token;
 
-  const rawBaseQuery = fetchBaseQuery({
-    baseUrl: `${BASE_URL}/api/${endpoint}/`,
-  });
+            if (token) {
+                headers.set("Authorization", `Bearer ${token}`);
+            }
 
-  return async (args, api, extraOptions) => {
-    console.log("➡️ RTK REQUEST:", args);
-
-    const result = await rawBaseQuery(args, api, extraOptions);
-
-    console.log("⬅️ RTK RESPONSE:", result);
-
-    return result;
-  };
-};
+            return headers;
+        },
+    });

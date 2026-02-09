@@ -3,9 +3,10 @@ use validator::Validate;
 use sqlx::PgPool;
 use actix_multipart::Multipart;
 use futures_util::StreamExt;
-use std::io::Write;
 use crate::utils::jwt;
-use sanitize_filename::sanitize;
+use uuid::Uuid;
+use crate::services::image_service::save_image_variants;
+use futures_util::TryStreamExt;
 
 use crate::{
     db::user_repository::UserRepository,
@@ -39,19 +40,25 @@ pub async fn register(
         println!("📦 Field: {} Filename: {:?}", name, filename);
 
         if name == "imageFile" {
-            let filename = filename.ok_or(ApiError::ValidationError("No filename".into()))?;
-            let safe_filename = sanitize(&filename);
-            let filepath = format!("./uploads/{}", safe_filename);
+            // let original_filename =
+            //     filename.ok_or(ApiError::ValidationError("No filename".into()))?;
 
-            let mut f = std::fs::File::create(&filepath)
-                .map_err(|_| ApiError::InternalServerError)?;
+            let base_name = format!("{}.webp", Uuid::new_v4());
 
-            while let Some(chunk) = field.next().await {
-                let bytes = chunk.map_err(|_| ApiError::InternalServerError)?;
-                f.write_all(&bytes).map_err(|_| ApiError::InternalServerError)?;
+            let mut bytes = Vec::new();
+
+            while let Some(chunk) = field
+                .try_next()
+                .await
+                .map_err(|_| ApiError::InternalServerError)? 
+            {
+                bytes.extend_from_slice(&chunk);
             }
 
-            image = Some(safe_filename);
+            save_image_variants(&bytes, &base_name)
+                .map_err(|_| ApiError::InternalServerError)?;
+
+            image = Some(base_name);
         } else {
             let mut data = Vec::new();
             while let Some(chunk) = field.next().await {
@@ -117,7 +124,7 @@ pub async fn register(
     println!("🔐 Creating JWT...");
 
     let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
-    let token = jwt::create_token(user.id, &secret)
+    let token = jwt::create_token(&user, &secret)
         .map_err(|_| ApiError::InternalServerError)?;
 
     Ok(HttpResponse::Ok().json(crate::models::user::AuthResponse { token }))
@@ -152,7 +159,7 @@ pub async fn login(
     }
 
     let secret = std::env::var("JWT_SECRET").expect("JWT_SECRET must be set");
-    let token = crate::utils::jwt::create_token(user.id, &secret)
+    let token = jwt::create_token(&user, &secret)
         .map_err(|_| ApiError::InternalServerError)?;
 
     Ok(HttpResponse::Ok().json(AuthResponse { token }))

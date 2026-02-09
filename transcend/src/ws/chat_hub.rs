@@ -1,16 +1,14 @@
 use actix::{Actor, StreamHandler, Addr, Handler};
 use actix_web_actors::ws;
-use serde_json::json;
-use uuid::Uuid;
 use actix::AsyncContext;
 use sqlx::PgPool;
+use crate::services::chat_service::ChatService;
 
 use super::chat_server::{ChatServer, Join, Broadcast, Leave};
 use super::messages::{ClientWsMessage, WsMessage};
-use crate::db::chat_repository::ChatRepository;
 
 pub struct ChatSocket {
-    pub user_id: Uuid,
+    pub user_id: i64,
     pub server: Addr<ChatServer>,
     pub pool: PgPool,
 }
@@ -46,15 +44,16 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatSocket {
                         let server = self.server.clone();
 
                         actix::spawn(async move {
-                            let repo = ChatRepository::new(pool);
+                            let service = ChatService::new(pool);
 
-                            match repo.send_message(chat_id, user_id, &message).await {
+                            match service.send_message(chat_id, user_id, message).await {
                                 Ok(saved) => {
-                                    let payload = json!({
+                                    let payload = serde_json::json!({
                                         "id": saved.id,
                                         "chatId": saved.chat_id,
                                         "userId": saved.user_id,
-                                        "message": saved.message
+                                        "message": saved.message,
+                                        "createdAt": saved.created_at
                                     });
 
                                     server.do_send(Broadcast {
@@ -62,7 +61,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatSocket {
                                         message: payload.to_string(),
                                     });
                                 }
-
                                 Err(err) => {
                                     eprintln!("Failed to send message: {err}");
                                 }

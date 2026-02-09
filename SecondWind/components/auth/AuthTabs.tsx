@@ -1,8 +1,8 @@
 import { View, Text, TouchableOpacity } from "react-native";
 import { router, usePathname } from "expo-router";
-import AuthTab from "@/components/auth/AuthTab";
+import {AuthTab} from "@/components/auth/AuthTab";
 
-const AuthTabs = () => {
+export function AuthTabs() {
     const pathname = usePathname();
 
     return (
@@ -34,5 +34,3 @@ const AuthTabs = () => {
         </View>
     );
 }
-
-export default AuthTabs;

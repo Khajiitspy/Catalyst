@@ -1,6 +1,5 @@
 use serde::{Serialize, Deserialize};
 use validator::Validate;
-use uuid::Uuid;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
@@ -31,7 +30,7 @@ pub struct AuthResponse {
 
 #[derive(Debug, Serialize, Deserialize, sqlx::FromRow)]
 pub struct User {
-    pub id: Uuid,
+    pub id: i64,
     pub first_name: String,
     pub last_name: String,
     pub email: String,

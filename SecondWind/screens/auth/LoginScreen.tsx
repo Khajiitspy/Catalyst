@@ -27,7 +27,7 @@ export default function LoginScreen() {
     const onSubmit = async () => {
         try {
             const res = await login(form).unwrap();
-            console.log("TOKEN:", res.token);
+            router.replace("/chat/home")
         } catch (e) {
             console.log("Login error:", e);
         }

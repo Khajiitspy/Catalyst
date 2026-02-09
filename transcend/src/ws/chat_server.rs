@@ -1,6 +1,5 @@
 use actix::{Actor, Context, Handler, Message, Recipient};
 use std::collections::{HashMap, HashSet};
-use uuid::Uuid;
 
 use super::messages::WsMessage;
 pub use crate::ws::messages::Leave;
@@ -8,19 +7,19 @@ pub use crate::ws::messages::Leave;
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct Join {
-    pub chat_id: Uuid,
+    pub chat_id: i64,
     pub addr: Recipient<WsMessage>,
 }
 
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct Broadcast {
-    pub chat_id: Uuid,
+    pub chat_id: i64,
     pub message: String,
 }
 
 pub struct ChatServer {
-    rooms: HashMap<Uuid, HashSet<Recipient<WsMessage>>>,
+    rooms: HashMap<i64, HashSet<Recipient<WsMessage>>>,
 }
 
 impl ChatServer {

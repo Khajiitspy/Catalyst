@@ -1,0 +1,108 @@
+󰣇 ~ ❯ curl -X POST http://localhost:5240/api/Auth/login \                                                                                         11:50 
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "AliceAbyss@proton.me",
+    "password": "AliceAbyss"
+  }'
+
+{"token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4ZWQ3MGRiZS00NTQ3LTRkNmYtOThiMi03YWJiNjkzZjkzYmYiLCJleHAiOjE3NzAzOTY2NjJ9.lrXijYLQZC75vURgX7PZfgGSiqWml2O_xYSohB6LA-k"}%         󰣇 ~ ❯ curl -X POST http://localhost:5240/api/Auth/login \      11:51 
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "AliceAbyss@proton.me",
+    "password": "AliceAbyss"
+  }'
+
+󰣇 ~ ❯ history | helix                                                                                         11:52 
+󰣇 ~ ❯ curl -X POST http://localhost:5240/api/chats/ \                                                                                              11:52 
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "AliceAbyss@proton.me",
+    "password": "AliceAbyss"
+  }'
+
+󰣇 ~ ❯ curl -X POST http://localhost:5240/api/chats/ \                                                                                         11:56 
+  -H "Content-Type: application/json"  
+
+󰣇 ~ ❯ curl -X GET http://localhost:5240/api/chats/ \                                                                                          11:56 
+  -H "Content-Type: application/json"
+
+󰣇 ~ ❯ export API=http://localhost:8080                                                                                         12:09 
+
+󰣇 ~ ❯ export API=http://localhost:5240                                                                                         12:10 
+
+󰣇 ~ ❯ export TOKEN="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4ZWQ3MGRiZS00NTQ3LTRkNmYtOThiMi03YWJiNjkzZjkzYmYiLCJleHAiOjE3NzAzOTY2NjJ9.lrXijYLQZC75vURgX7PZfgGSiqWml2O_xYSohB6LA-k"
+󰣇 ~ ❯ curl -X GET "$API/chats/types" \                                                                                         12:12 
+  -H "Authorization: Bearer $TOKEN"
+
+󰣇 ~ ❯ curl -X GET "$API/api/chats/types" \                                                                                         12:12 
+  -H "Authorization: Bearer $TOKEN"
+
+[{"id":"562ecc6a-ef61-4b3a-9bb4-ec2fef9e4ca6","type_name":"Private"},{"id":"67f276a8-4f23-4c12-9bc7-e3d31edb14b9","type_name":"Group"}]%                                                   󰣇 ~ ❯ curl -X POST "$API/api/chats" \      12:12 
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Test Chat 2",
+    "chat_type_id": "67f276a8-4f23-4c12-9bc7-e3d31edb14b9"
+  }'
+
+"d275716e-3b62-4cb3-a91a-27986e67d94a"%                                                                                                                                                    󰣇 ~ ❯ export CHAT_ID=d275716e-3b62-4cb3-a91a-27986e67d94a      12:15 
+
+󰣇 ~ ❯ curl -X GET "$API/api/chats" \                                                                                         12:15 
+  -H "Authorization: Bearer $TOKEN"
+
+[{"id":"d275716e-3b62-4cb3-a91a-27986e67d94a","name":"Test Chat 2","chat_type_id":"67f276a8-4f23-4c12-9bc7-e3d31edb14b9","chat_type_name":"Group"},{"id":"1c41aad5-4c6c-4b29-8f5c-88578f933ca5","name":"Test Chat","chat_type_id":"67f276a8-4f23-4c12-9bc7-e3d31edb14b9","chat_type_name":"Group"}]%                                                                                  󰣇 ~ ❯ curl -X POST "$API/api/chats/messages" \             12:15 
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chat_id": "'"$CHAT_ID"'",
+    "message": "Hello from curl 👋"
+  }'
+
+{"id":"2b332280-0c25-4cc3-9f92-899f04a89a26","chat_id":"d275716e-3b62-4cb3-a91a-27986e67d94a","user_id":"8ed70dbe-4547-4d6f-98b2-7abb693f93bf","message":"Hello from curl 👋"}%            󰣇 ~ ❯ curl -X GET "$API/api/chats/$CHAT_ID/messages" \      12:16 
+  -H "Authorization: Bearer $TOKEN"
+
+[{"id":"2b332280-0c25-4cc3-9f92-899f04a89a26","chat_id":"d275716e-3b62-4cb3-a91a-27986e67d94a","user_id":"8ed70dbe-4547-4d6f-98b2-7abb693f93bf","message":"Hello from curl 👋"}]%          󰣇 ~ ❯ curl -X GET "$API/api/chats/$CHAT_ID/messages" \      12:17 
+  -H "Authorization: Bearer $TOKEN"
+
+curl: (7) Failed to connect to localhost port 5240 after 0 ms: Could not connect to server
+󰣇 ~ ❯ curl -X GET "$API/api/chats/$CHAT_ID/messages" \                                                                                         11:19 
+  -H "Authorization: Bearer $TOKEN"
+
+󰣇 ~ ❯ curl -X GET "$API/api/chats/types" \                                                                                         12:12                                          13:46 
+  -H "Authorization: Bearer $TOKEN"
+curl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL using bad/illegal format or missing URL
+^C
+󰣇 ~ ❯ curl -X POST http://localhost:5240/api/Auth/login \                                                                                         11:50                           10:22 
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "AliceAbyss@proton.me",
+    "password": "AliceAbyss"
+  }'
+Content type errorcurl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL using bad/illegal format or missing URL
+^X^C
+󰣇 ~ ❯ curl -X POST http://localhost:5240/api/chats \                                                                                                                               10:24 
+     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI4ZWQ3MGRiZS00NTQ3LTRkNmYtOThiMi03YWJiNjkzZjkzYmYiLCJleHAiOjE3NzAzOTY2NjJ9.lrXijYLQZC75vURgX7PZfgGSiqWml2O_xYSohB6LA-k" \                              
+     -H "Content-Type: application/json" \                  
+     -d '{"chatTypeId": 3, "name": "Hello", "userIds": [5]}'
+
+󰣇 ~ ❯ curl -X POST http://localhost:5240/api/Auth/login \                                                                                         11:50                           12:42 
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "AliceAbyss@proton.me",
+    "password": "AliceAbyss"
+  }'
+Content type errorcurl: (3) URL rejected: Malformed input to a URL function
+curl: (3) URL using bad/illegal format or missing URL
+^C
+󰣇 ~ ❯ curl -X POST http://localhost:5240/api/Auth/login \                                                                                                                          12:43 
+-H "Content-Type: application/json" \
+-d '{"email": "AliceAbyss@proton.me", "password": "AliceAbyss"}'
+
+{"token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjUsIm5hbWUiOiJBbGljZSBBYnlzcyIsImVtYWlsIjoiQWxpY2VBYnlzc0Bwcm90b24ubWUiLCJpbWFnZSI6ImFhNzJhYzdhLWJmMmMtNDQzMi1iZDFhLTZmZWFmZmM5MWQ1MS53ZWJwIiwicm9sZXMiOlsidXNlciJdLCJleHAiOjE3NzA3NDU4MzZ9.USI27rrmY65kpzEL5zyJrnwHnZuy45e39N7tSNpsbIo"}%                                                                                    󰣇 ~ ❯ curl -X POST http://localhost:5240/api/chats \                                                                                                                               12:50 
+     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjUsIm5hbWUiOiJBbGljZSBBYnlzcyIsImVtYWlsIjoiQWxpY2VBYnlzc0Bwcm90b24ubWUiLCJpbWFnZSI6ImFhNzJhYzdhLWJmMmMtNDQzMi1iZDFhLTZmZWFmZmM5MWQ1MS53ZWJwIiwicm9sZXMiOlsidXNlciJdLCJleHAiOjE3NzA3NDU4MzZ9.USI27rrmY65kpzEL5zyJrnwHnZuy45e39N7tSNpsbIo" \
+     -H "Content-Type: application/json" \
+     -d '{"chatTypeId": 3, "name": "Hello", "userIds": [5]}'
+
+1%                                                                                                                                                                                         󰣇 ~ ❯         

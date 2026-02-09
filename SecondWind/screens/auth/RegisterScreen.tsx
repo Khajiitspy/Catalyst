@@ -18,6 +18,7 @@ import { PasswordField } from "@/components/form/PasswordField";
 import { useRegisterMutation } from "@/services/authService";
 import { IRegister } from "@/types/auth/IRegister";
 import { useForm } from "@/hooks/useForm";
+import {router} from "expo-router";
 
 export default function RegisterScreen() {
     const { form, setForm, onChange } = useForm<IRegister>({
@@ -64,7 +65,8 @@ export default function RegisterScreen() {
 
         try {
             const res = await register(form).unwrap();
-            console.log("REGISTER TOKEN:", res.token);
+            // console.log("REGISTER TOKEN:", res.token);
+            router.replace("/chat/home")
         } catch (e) {
             console.log("Register error:", e);
         }

@@ -4,6 +4,6 @@ use sqlx::FromRow;
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct ChatType {
-    pub id: Uuid,
+    pub id: i64,
     pub type_name: String,
 }

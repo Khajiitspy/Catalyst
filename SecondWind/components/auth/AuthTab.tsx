@@ -1,7 +1,6 @@
-import { Text, TouchableOpacity } from "react-native";
+import {Text, TouchableOpacity} from "react-native";
 
-
-export default function AuthTab({
+export function AuthTab({
                  label,
                  emoji,
                  active,

@@ -1,11 +1,14 @@
 use actix_web::{App, HttpServer, web};
 use db::pool::create_pool;
+use actix_files::Files;
+use crate::db::seeder::seed_data;
 
 mod db;
 mod handlers;
 mod models;
 mod utils;
 mod ws;
+mod services;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -18,9 +21,22 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to connect to database");
 
+    sqlx::migrate!().run(&pool).await.unwrap();
+
+    if let Err(e) = seed_data(&pool).await {
+        eprintln!("Error seeding data: {}", e);
+    }
+
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(pool.clone()))
+             
+            // 🔓 serve images
+            .service(
+                Files::new("/images", "./images")
+                    .use_last_modified(true)
+                    .use_etag(true)
+            )
 
             // 🔹 REST API
             .service(

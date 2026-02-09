@@ -1,12 +1,11 @@
 use actix_web::{FromRequest, HttpRequest};
 use futures_util::future::{ready, Ready};
-use uuid::Uuid;
 
 use crate::utils::errors::ApiError;
 use crate::utils::jwt::decode_token;
 
 pub struct AuthUser {
-    pub user_id: Uuid,
+    pub user_id: i64,
 }
 
 impl FromRequest for AuthUser {
