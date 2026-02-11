@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import {useAppSelector, useAppDispatch} from "@/store";
 import {IMAGE_URL} from "@/constants/Urls";
 import { logout } from "@/store/slices/authSlice";
+import { chatService } from "@/services/chatService";
 
 export default function HomeScreen() {
     const { user } = useAppSelector(state => state.auth);
@@ -12,6 +13,7 @@ export default function HomeScreen() {
 
     const onLogout = () => {
         dispatch(logout());
+        dispatch(chatService.util.resetApiState());
 
         router.replace("/");
     };

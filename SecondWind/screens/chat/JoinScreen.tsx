@@ -7,8 +7,15 @@ import ChatWindow from "@/components/chat/ChatWindow";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function JoinScreen() {
-    const { data: chats } = useGetMyChatsQuery();
     const { user } = useAppSelector(s => s.auth);
+
+    const { data: chats } = useGetMyChatsQuery(user?.id, {
+        skip: !user,
+    });
+    // const { data: chats } = useGetMyChatsQuery({
+    //     refetchOnMountOrArgChange: true,
+    // });
+    // const { user } = useAppSelector(s => s.auth);
 
     const [activeChatId, setActiveChatId] = useState<number | null>(null);
 
