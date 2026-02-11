@@ -42,13 +42,13 @@ export default function LoginScreen() {
                     style={{ flex: 1 }}
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                 >
-                    <ScrollView
-                        contentContainerStyle={{
-                            flexGrow: 1,
-                            justifyContent: "center",
-                        }}
-                        keyboardShouldPersistTaps="handled"
-                    >
+                    {/*<ScrollView*/}
+                    {/*    contentContainerStyle={{*/}
+                    {/*        flexGrow: 1,*/}
+                    {/*        justifyContent: "center",*/}
+                    {/*    }}*/}
+                    {/*    keyboardShouldPersistTaps="handled"*/}
+                    {/*>*/}
                         <View className="items-center mb-12">
                             <Text className="text-5xl font-black text-zinc-900 dark:text-white tracking-tighter">
                                 Вхід
@@ -96,7 +96,7 @@ export default function LoginScreen() {
                                 </Text>
                             </TouchableOpacity>
                         </View>
-                    </ScrollView>
+                    {/*</ScrollView>*/}
                 </KeyboardAvoidingView>
             </SafeAreaView>
         </View>

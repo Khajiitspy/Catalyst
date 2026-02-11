@@ -50,7 +50,8 @@ export const chatService = createApi({
         }),
 
         getChatMessages: builder.query<IMessageItem[], number>({
-            query: chatId => `${chatId}/messages`
+            query: chatId => `${chatId}/messages`,
+            providesTags: ["Chat"],
         }),
 
         amIAdmin: builder.query<boolean, number>({

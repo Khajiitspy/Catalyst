@@ -61,6 +61,8 @@ pub struct ChatMessageModel {
     pub user_id: i64,
     pub message: String,
     pub created_at: DateTime<Utc>,
+    pub user_name: String,
+    pub user_image: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]

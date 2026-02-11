@@ -93,6 +93,7 @@ impl ChatService {
 
 impl From<sqlx::Error> for ApiError {
     fn from(err: sqlx::Error) -> Self {
+        eprintln!("SQLx error: {err:?}");
         ApiError::InternalServerError
     }
 }

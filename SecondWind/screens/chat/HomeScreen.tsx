@@ -2,11 +2,19 @@ import { View, Text, StatusBar, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import {useAppSelector} from "@/store";
+import {useAppSelector, useAppDispatch} from "@/store";
 import {IMAGE_URL} from "@/constants/Urls";
+import { logout } from "@/store/slices/authSlice";
 
 export default function HomeScreen() {
     const { user } = useAppSelector(state => state.auth);
+    const dispatch = useAppDispatch();
+
+    const onLogout = () => {
+        dispatch(logout());
+
+        router.replace("/");
+    };
 
     return (
         <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
@@ -78,6 +86,16 @@ export default function HomeScreen() {
                     >
                         <Text className="text-zinc-900 dark:text-zinc-100 text-lg font-semibold">
                             Підключитися до чату
+                        </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={onLogout}
+                        className="bg-red-500/10 border border-red-500/20 py-4 rounded-2xl items-center"
+                    >
+                        <Text className="text-red-500 text-xl font-bold tracking-tight">
+                            Вийти з аккаунту
                         </Text>
                     </TouchableOpacity>
 

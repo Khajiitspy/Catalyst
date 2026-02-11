@@ -4,19 +4,20 @@ import {
     Text,
     ScrollView,
     TouchableOpacity,
+    Image,
 } from "react-native";
 
 import { InputField } from "@/components/form/InputField";
 import { useForm } from "@/hooks/useForm";
-
-import { getChatConnection } from "@/hubs/chatHub";
+import { useAppSelector } from "@/store";
+import { useChatWebSocket } from "@/hooks/useChatWebSocket";
 import {
     useGetChatMessagesQuery,
     useAmIAdminQuery,
 } from "@/services/chatService";
 import { IMessageItem } from "@/types/chat/IMessageItem";
-
 import EditChatModal from "./EditChatModal";
+import { IMAGE_URL } from "@/constants/Urls";
 
 interface ChatWindowProps {
     chatId: number | null;
@@ -24,53 +25,48 @@ interface ChatWindowProps {
 
 const ChatWindow: FC<ChatWindowProps> = ({ chatId }) => {
     const scrollRef = useRef<ScrollView>(null);
+    const { user } = useAppSelector(s => s.auth);
 
-    const { data: history } = useGetChatMessagesQuery(chatId ?? 0, {
-        skip: !chatId,
-    });
+    const { data: history, isFetching } =
+        useGetChatMessagesQuery(chatId ?? 0, {
+            skip: !chatId,
+            refetchOnMountOrArgChange: true,
+            refetchOnFocus: true,
+            refetchOnReconnect: true,
+            pollingInterval: 2000,
+        });
 
     const { data: isAdmin } = useAmIAdminQuery(chatId ?? 0, {
         skip: !chatId,
     });
 
-    const [messages, setMessages] = useState<IMessageItem[]>([]);
-    const [editVisible, setEditVisible] = useState(false);
+    const {
+        messages,
+        setMessages,
+        sendMessage,
+        isConnected,
+    } = useChatWebSocket(chatId, user?.token);
 
+    const [editVisible, setEditVisible] = useState(false);
     const msgForm = useForm<{ message: string }>({ message: "" });
 
+    /** REST → initial messages */
     useEffect(() => {
-        if (history) setMessages(history);
-    }, [history]);
+        if (!history || !user) return;
 
-    useEffect(() => {
-        if (!chatId) return;
+        setMessages(
+            history.map(m => ({
+                ...m,
+                isMine: m.userId === user.id,
+            }))
+        );
+    }, [history, user]);
 
-        const connection = getChatConnection();
-        if (!connection) return;
-
-        connection.invoke("JoinChat", chatId);
-
-        const handler = (msg: IMessageItem) =>
-            setMessages(prev => [...prev, msg]);
-
-        connection.on("ReceiveMessage", handler);
-
-        return () => {
-            connection.invoke("LeaveChat", chatId);
-            connection.off("ReceiveMessage", handler);
-            setMessages([]);
-        };
-    }, [chatId]);
-
-    const sendMessage = () => {
+    const send = () => {
         const text = msgForm.form.message.trim();
-        if (!text || !chatId) return;
+        if (!text) return;
 
-        const connection = getChatConnection();
-        if (!connection) return;
-
-        connection.invoke("SendMessage", { chatId, message: text });
-
+        sendMessage(text);
         msgForm.setForm({ message: "" });
     };
 
@@ -84,10 +80,10 @@ const ChatWindow: FC<ChatWindowProps> = ({ chatId }) => {
 
     return (
         <View className="flex-1">
-
+            {/* Header */}
             <View className="flex-row items-center justify-between p-3 border-b border-zinc-300 dark:border-zinc-700">
                 <Text className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                    Чат
+                    Чат {isFetching && "..."}
                 </Text>
 
                 {isAdmin && (
@@ -95,48 +91,76 @@ const ChatWindow: FC<ChatWindowProps> = ({ chatId }) => {
                         onPress={() => setEditVisible(true)}
                         className="px-3 py-1 bg-emerald-500 rounded-lg"
                     >
-                        <Text className="text-white font-semibold">
-                            Редагувати
-                        </Text>
+                        <Text className="text-white font-semibold">Редагувати</Text>
                     </TouchableOpacity>
                 )}
             </View>
 
+            {/* Messages */}
             <ScrollView
                 ref={scrollRef}
                 className="flex-1 p-4"
-                contentContainerStyle={{ gap: 8 }}
+                contentContainerStyle={{ gap: 8, paddingBottom: 20 }}
+                keyboardShouldPersistTaps="handled"
                 onContentSizeChange={() =>
                     scrollRef.current?.scrollToEnd({ animated: true })
                 }
             >
                 {messages.map((m, i) => (
                     <View
-                        key={m.id ?? i}
-                        className="bg-zinc-200 dark:bg-zinc-800 p-3 rounded-xl self-start max-w-[85%]"
+                        key={m.id ?? `msg-${i}`}
+                        className={`p-3 rounded-xl max-w-[85%] flex-row gap-2 ${
+                            m.isMine
+                                ? "self-end bg-emerald-500"
+                                : "self-start bg-zinc-200 dark:bg-zinc-800"
+                        }`}
                     >
-                        <Text className="text-zinc-600 dark:text-zinc-400 font-semibold mb-1">
-                            {m.userName || "Інший користувач"}
-                        </Text>
-                        <Text className="text-zinc-900 dark:text-zinc-100">
-                            {m.message}
-                        </Text>
+                        {!m.isMine && (
+                            <Image
+                                source={{
+                                    uri: m.userImage
+                                        ? `${IMAGE_URL}100_${m.userImage}`
+                                        : undefined,
+                                }}
+                                className="w-10 h-10 rounded-full"
+                            />
+                        )}
+
+                        <View className="flex-1">
+                            {!m.isMine && (
+                                <Text className="text-zinc-600 dark:text-zinc-400 font-semibold mb-1">
+                                    {m.userName || "Користувач"}
+                                </Text>
+                            )}
+
+                            <Text
+                                className={
+                                    m.isMine
+                                        ? "text-white"
+                                        : "text-zinc-900 dark:text-zinc-100"
+                                }
+                            >
+                                {m.message}
+                            </Text>
+                        </View>
                     </View>
                 ))}
             </ScrollView>
 
+            {/* Input */}
             <View className="flex-row p-2 border-t border-zinc-300 dark:border-zinc-700 items-end gap-2">
                 <View className="flex-1">
                     <InputField
                         placeholder="Напишіть повідомлення..."
                         value={msgForm.form.message}
                         onChangeText={msgForm.onChange("message")}
-                        onSubmitEditing={sendMessage}
+                        onSubmitEditing={send}
                     />
                 </View>
 
                 <TouchableOpacity
-                    onPress={sendMessage}
+                    onPress={send}
+                    disabled={!isConnected}
                     className="bg-emerald-500 px-4 py-3 rounded-xl"
                 >
                     <Text className="text-white font-semibold">OK</Text>

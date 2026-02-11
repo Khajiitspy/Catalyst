@@ -63,11 +63,16 @@ impl Handler<Leave> for ChatServer {
 impl Handler<Broadcast> for ChatServer {
     type Result = ();
 
-    fn handle(&mut self, msg: Broadcast, _: &mut Context<Self>) {
+    fn handle(&mut self, msg: Broadcast, _: &mut Self::Context) {
+        // Check if there are any clients for this chat room
         if let Some(room) = self.rooms.get(&msg.chat_id) {
             for client in room {
+                // Send the message to all clients in the chat room
                 let _ = client.do_send(WsMessage(msg.message.clone()));
             }
+        } else {
+            eprintln!("No clients in room for chat ID {}", msg.chat_id);
         }
     }
 }
+

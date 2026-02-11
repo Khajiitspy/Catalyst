@@ -31,12 +31,24 @@ async fn chat_ws(
     pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, Error> {
     // 🔐 Extract Bearer token
+    // let token = req
+    //     .headers()
+    //     .get("Authorization")
+    //     .and_then(|h| h.to_str().ok())
+    //     .and_then(|s| s.strip_prefix("Bearer "))
+    //     .ok_or_else(|| actix_web::error::ErrorUnauthorized("No token"))?;
     let token = req
-        .headers()
-        .get("Authorization")
-        .and_then(|h| h.to_str().ok())
-        .and_then(|s| s.strip_prefix("Bearer "))
+        .query_string()
+        .split('&')
+        .find_map(|pair| {
+            let mut parts = pair.split('=');
+            match (parts.next(), parts.next()) {
+                (Some("token"), Some(val)) => Some(val),
+                _ => None,
+            }
+        })
         .ok_or_else(|| actix_web::error::ErrorUnauthorized("No token"))?;
+
 
     let secret = std::env::var("JWT_SECRET")
         .expect("JWT_SECRET must be set");

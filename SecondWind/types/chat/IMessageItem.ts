@@ -4,4 +4,8 @@ export interface IMessageItem {
     chatId: number;
     userId: number;
     userName: string;
+    userImage?: string;
+
+    createdAt?: string; // optional
+    isMine?: boolean;   // UI-only
 }

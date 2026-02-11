@@ -137,14 +137,17 @@ impl ChatRepository {
         sqlx::query_as::<_, ChatMessageModel>(
             r#"
             SELECT
-                id,
-                chat_id,
-                user_id,
-                message,
-                created_at
-            FROM chat_messages
-            WHERE chat_id = $1
-            ORDER BY created_at ASC
+                m.id,
+                m.chat_id,
+                m.user_id,
+                m.message,
+                m.created_at,
+                u.first_name || ' ' || u.last_name AS user_name,
+                u.image AS user_image
+            FROM chat_messages m
+            JOIN users u ON u.id = m.user_id
+            WHERE m.chat_id = $1
+            ORDER BY m.created_at ASC
             "#
         )
         .bind(chat_id)
@@ -158,12 +161,13 @@ impl ChatRepository {
         user_id: i64,
         message: &str,
     ) -> Result<ChatMessageModel, sqlx::Error> {
-        // 1️⃣ Check membership
+
+        // 1️⃣ Check membership (keep as-is)
+
         let is_member: bool = sqlx::query_scalar(
             r#"
             SELECT EXISTS (
-                SELECT 1
-                FROM chat_users
+                SELECT 1 FROM chat_users
                 WHERE chat_id = $1 AND user_id = $2
             )
             "#
@@ -178,11 +182,11 @@ impl ChatRepository {
         }
 
         // 2️⃣ Insert message
-        let message = sqlx::query_as::<_, ChatMessageModel>(
+        let message_id: i64 = sqlx::query_scalar(
             r#"
             INSERT INTO chat_messages (chat_id, user_id, message)
             VALUES ($1, $2, $3)
-            RETURNING id, chat_id, user_id, message
+            RETURNING id
             "#
         )
         .bind(chat_id)
@@ -191,8 +195,70 @@ impl ChatRepository {
         .fetch_one(&self.pool)
         .await?;
 
+        // 3️⃣ Fetch message WITH user data
+        let message = sqlx::query_as::<_, ChatMessageModel>(
+            r#"
+            SELECT
+                m.id,
+                m.chat_id,
+                m.user_id,
+                m.message,
+                m.created_at,
+                u.first_name || ' ' || u.last_name AS user_name,
+                u.image AS user_image
+            FROM chat_messages m
+            JOIN users u ON u.id = m.user_id
+            WHERE m.id = $1
+            "#
+        )
+        .bind(message_id)
+        .fetch_one(&self.pool)
+        .await?;
+
         Ok(message)
     }
+
+    // pub async fn send_message(
+    //     &self,
+    //     chat_id: i64,
+    //     user_id: i64,
+    //     message: &str,
+    // ) -> Result<ChatMessageModel, sqlx::Error> {
+    //     // 1️⃣ Check membership
+    //     let is_member: bool = sqlx::query_scalar(
+    //         r#"
+    //         SELECT EXISTS (
+    //             SELECT 1
+    //             FROM chat_users
+    //             WHERE chat_id = $1 AND user_id = $2
+    //         )
+    //         "#
+    //     )
+    //     .bind(chat_id)
+    //     .bind(user_id)
+    //     .fetch_one(&self.pool)
+    //     .await?;
+
+    //     if !is_member {
+    //         return Err(sqlx::Error::RowNotFound);
+    //     }
+
+    //     // 2️⃣ Insert message
+    //     let message = sqlx::query_as::<_, ChatMessageModel>(
+    //         r#"
+    //         INSERT INTO chat_messages (chat_id, user_id, message)
+    //         VALUES ($1, $2, $3)
+    //         RETURNING id, chat_id, user_id, message, created_at
+    //         "#
+    //     )
+    //     .bind(chat_id)
+    //     .bind(user_id)
+    //     .bind(message)
+    //     .fetch_one(&self.pool)
+    //     .await?;
+
+    //     Ok(message)
+    // }
 
     pub async fn is_admin(
         &self,

@@ -48,18 +48,25 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for ChatSocket {
 
                             match service.send_message(chat_id, user_id, message).await {
                                 Ok(saved) => {
-                                    let payload = serde_json::json!({
-                                        "id": saved.id,
-                                        "chatId": saved.chat_id,
-                                        "userId": saved.user_id,
-                                        "message": saved.message,
-                                        "createdAt": saved.created_at
-                                    });
+                                    let payload = serde_json::to_string(&saved).unwrap();
 
                                     server.do_send(Broadcast {
                                         chat_id,
-                                        message: payload.to_string(),
+                                        message: payload,
                                     });
+
+                                    // let payload = serde_json::json!({
+                                    //     "id": saved.id,
+                                    //     "chatId": saved.chat_id,
+                                    //     "userId": saved.user_id,
+                                    //     "message": saved.message,
+                                    //     "createdAt": saved.created_at
+                                    // });
+
+                                    // server.do_send(Broadcast {
+                                    //     chat_id,
+                                    //     message: payload.to_string(),
+                                    // });
                                 }
                                 Err(err) => {
                                     eprintln!("Failed to send message: {err}");

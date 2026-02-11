@@ -1,9 +1,10 @@
-import {StatusBar, View} from "react-native";
+import {StatusBar, View, KeyboardAvoidingView, Platform} from "react-native";
 import { useState, useEffect } from "react";
 import { useGetMyChatsQuery } from "@/services/chatService";
 import { useAppSelector } from "@/store";
 import ChatList from "@/components/chat/ChatList";
 import ChatWindow from "@/components/chat/ChatWindow";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function JoinScreen() {
     const { data: chats } = useGetMyChatsQuery();

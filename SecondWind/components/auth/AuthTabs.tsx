@@ -1,9 +1,26 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, Keyboard, Platform } from "react-native";
 import { router, usePathname } from "expo-router";
-import {AuthTab} from "@/components/auth/AuthTab";
+import { AuthTab } from "@/components/auth/AuthTab";
 
 export function AuthTabs() {
     const pathname = usePathname();
+    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+    useEffect(() => {
+        const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+        const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+
+        const showSubscription = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+        const hideSubscription = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+        return () => {
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
+    }, []);
+
+    if (isKeyboardVisible) return null;
 
     return (
         <View className="px-4 pb-6 bg-zinc-100 dark:bg-zinc-900">
@@ -14,7 +31,6 @@ export function AuthTabs() {
                     active={pathname === "/login"}
                     onPress={() => router.replace("/login")}
                 />
-
                 <AuthTab
                     label="Реєстрація"
                     emoji="✨"

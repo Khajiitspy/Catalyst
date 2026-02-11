@@ -10,6 +10,7 @@ const getUserFromToken = (token: string): IUserIdentity | null => {
     try {
         const decoded: any = jwtDecode(token);
         return {
+            id: decoded.sub,
             name:
                 decoded["name"] ??
                 decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ??
