@@ -21,7 +21,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to connect to database");
 
-    sqlx::migrate!().run(&pool).await.unwrap();
+    // sqlx::migrate!().run(&pool).await.unwrap();
 
     if let Err(e) = seed_data(&pool).await {
         eprintln!("Error seeding data: {}", e);
