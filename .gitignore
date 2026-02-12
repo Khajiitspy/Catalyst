@@ -2,10 +2,6 @@
 target/
 **/target/
 
-# Env
-.env
-.env.*
-
 # OS
 .DS_Store
 
