@@ -1,5 +1,12 @@
-import { FC, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Modal } from "react-native";
+import { FC, useEffect, useMemo, useState } from "react";
+import {
+    View,
+    Text,
+    ScrollView,
+    TouchableOpacity,
+    Modal,
+    ActivityIndicator,
+} from "react-native";
 
 import { InputField } from "@/components/form/InputField";
 import { useForm } from "@/hooks/useForm";
@@ -19,9 +26,6 @@ interface Props {
 const EditChatModal: FC<Props> = ({ chatId, visible, onClose }) => {
     const [editChat, { isLoading }] = useEditChatMutation();
 
-    const [addIds, setAddIds] = useState<number[]>([]);
-    const [removeIds, setRemoveIds] = useState<number[]>([]);
-
     const editForm = useForm<IChatEdit>({
         id: chatId,
         name: "",
@@ -29,15 +33,35 @@ const EditChatModal: FC<Props> = ({ chatId, visible, onClose }) => {
         removeUserIds: [],
     });
 
-    const { data: members } = useGetUsersQuery(
+    useEffect(() => {
+        editForm.setForm(f => ({ ...f, id: chatId }));
+    }, [chatId]);
+
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [addIds, setAddIds] = useState<number[]>([]);
+    const [removeIds, setRemoveIds] = useState<number[]>([]);
+
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedSearch(search), 300);
+        return () => clearTimeout(t);
+    }, [search]);
+
+    const { data: members, isFetching: membersLoading } = useGetUsersQuery(
         { chatId },
         { skip: !visible }
     );
 
-    const { data: searchUsers } = useGetUsersQuery(
-        { query: editForm.form.name },
-        { skip: !visible || (editForm.form.name?.length ?? 0) < 2 }
+    const { data: searchUsers, isFetching: searchLoading } = useGetUsersQuery(
+        { query: debouncedSearch },
+        { skip: !visible }
     );
+
+    const filteredSearch = useMemo(() => {
+        if (!searchUsers) return [];
+        const memberIds = new Set(members?.map(m => m.id));
+        return searchUsers.filter(u => !memberIds.has(u.id));
+    }, [searchUsers, members]);
 
     const toggle = (
         id: number,
@@ -55,6 +79,11 @@ const EditChatModal: FC<Props> = ({ chatId, visible, onClose }) => {
             removeUserIds: removeIds,
         });
 
+        close();
+    };
+
+    const close = () => {
+        setSearch("");
         setAddIds([]);
         setRemoveIds([]);
         onClose();
@@ -63,90 +92,113 @@ const EditChatModal: FC<Props> = ({ chatId, visible, onClose }) => {
     return (
         <Modal visible={visible} transparent animationType="fade">
             <View className="flex-1 bg-black/50 items-center justify-center">
-                <ScrollView className="w-[90%] bg-white dark:bg-zinc-900 rounded-xl p-4">
+                <View className="w-[92%] max-h-[85%] bg-white dark:bg-zinc-900 rounded-xl">
 
-                    <Text className="text-lg font-semibold mb-3 text-zinc-900 dark:text-zinc-100">
-                        Редагувати чат
-                    </Text>
+                    <ScrollView className="p-4">
 
-                    <InputField
-                        placeholder="Назва чату"
-                        value={editForm.form.name ?? ""}
-                        onChangeText={editForm.onChange("name")}
-                    />
+                        <Text className="text-lg font-semibold mb-3 text-zinc-900 dark:text-zinc-100">
+                            Редагувати чат
+                        </Text>
 
-                    <Text className="mt-4 mb-1 font-semibold text-zinc-700 dark:text-zinc-300">
-                        Поточні учасники:
-                    </Text>
+                        <InputField
+                            placeholder="Назва чату"
+                            value={editForm.form.name ?? ""}
+                            onChangeText={editForm.onChange("name")}
+                        />
 
-                    {members?.map(u => (
-                        <View
-                            key={u.id}
-                            className="flex-row justify-between items-center bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg mb-1"
-                        >
-                            <Text className="text-zinc-900 dark:text-zinc-100">
-                                {u.name}
-                            </Text>
+                        <Text className="mt-4 mb-1 font-semibold text-zinc-700 dark:text-zinc-300">
+                            Поточні учасники:
+                        </Text>
 
-                            <TouchableOpacity
-                                onPress={() =>
-                                    toggle(u.id, removeIds, setRemoveIds)
-                                }
+                        {membersLoading && <ActivityIndicator />}
+
+                        {members?.map(u => (
+                            <View
+                                key={u.id}
+                                className="flex-row justify-between items-center bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg mb-1"
                             >
+                                <Text className="text-zinc-900 dark:text-zinc-100">
+                                    {u.name}
+                                </Text>
+
+                                <TouchableOpacity
+                                    onPress={() =>
+                                        toggle(u.id, removeIds, setRemoveIds)
+                                    }
+                                >
+                                    <Text
+                                        className={`font-semibold ${
+                                            removeIds.includes(u.id)
+                                                ? "text-red-500"
+                                                : "text-emerald-500"
+                                        }`}
+                                    >
+                                        {removeIds.includes(u.id)
+                                            ? "Видалено"
+                                            : "Видалити"}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+
+                        <Text className="mt-4 mb-1 font-semibold text-zinc-700 dark:text-zinc-300">
+                            Додати учасників:
+                        </Text>
+
+                        <InputField
+                            additionalClass="mb-3"
+                            placeholder="Пошук користувача..."
+                            value={search}
+                            onChangeText={setSearch}
+                        />
+
+                        {searchLoading && <ActivityIndicator />}
+
+                        {filteredSearch.map(u => (
+                            <TouchableOpacity
+                                key={u.id}
+                                onPress={() => toggle(u.id, addIds, setAddIds)}
+                                className="flex-row justify-between items-center bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg mb-1"
+                            >
+                                <View className="flex-1 mr-2">
+                                    <Text
+                                        numberOfLines={1}
+                                        ellipsizeMode="tail"
+                                        className="text-zinc-900 dark:text-zinc-100"
+                                    >
+                                        {u.name}
+                                    </Text>
+                                </View>
+
                                 <Text
                                     className={`font-semibold ${
-                                        removeIds.includes(u.id)
-                                            ? "text-red-500"
-                                            : "text-emerald-500"
+                                        addIds.includes(u.id)
+                                            ? "text-emerald-500"
+                                            : "text-zinc-500"
                                     }`}
                                 >
-                                    {removeIds.includes(u.id)
-                                        ? "Видалено"
-                                        : "Видалити"}
+                                    {addIds.includes(u.id)
+                                        ? "Додано"
+                                        : "Додати"}
                                 </Text>
                             </TouchableOpacity>
-                        </View>
-                    ))}
+                        ))}
 
-                    {searchUsers?.map(u => (
-                        <TouchableOpacity
-                            key={u.id}
-                            onPress={() =>
-                                toggle(u.id, addIds, setAddIds)
-                            }
-                            className="flex-row justify-between items-center bg-zinc-200 dark:bg-zinc-800 p-2 rounded-lg mb-1"
-                        >
-                            <Text className="text-zinc-900 dark:text-zinc-100">
-                                {u.name}
-                            </Text>
+                        <View className="h-6" />
+                    </ScrollView>
 
-                            <Text
-                                className={`font-semibold ${
-                                    addIds.includes(u.id)
-                                        ? "text-emerald-500"
-                                        : "text-zinc-500"
-                                }`}
-                            >
-                                {addIds.includes(u.id)
-                                    ? "Додано"
-                                    : "Додати"}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-
-                    <View className="flex-row justify-end gap-3 mt-3">
-                        <TouchableOpacity onPress={onClose}>
+                    <View className="flex-row justify-end gap-4 p-3 border-t border-zinc-200 dark:border-zinc-800">
+                        <TouchableOpacity onPress={close}>
                             <Text className="text-zinc-500">Скасувати</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity onPress={save} disabled={isLoading}>
                             <Text className="text-emerald-500 font-semibold">
-                                Зберегти
+                                {isLoading ? "Збереження..." : "Зберегти"}
                             </Text>
                         </TouchableOpacity>
                     </View>
-
-                </ScrollView>
+                </View>
             </View>
         </Modal>
     );

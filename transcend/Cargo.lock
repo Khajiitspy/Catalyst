@@ -4016,6 +4016,7 @@ dependencies = [
  "futures-util",
  "image",
  "jsonwebtoken",
+ "log",
  "paperclip",
  "paperclip-actix 0.5.1",
  "password-hash",

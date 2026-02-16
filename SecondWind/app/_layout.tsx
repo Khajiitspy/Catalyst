@@ -3,12 +3,19 @@ import "../global.css";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
 import { store } from "@/store";
+import { useRestoreAuth } from "@/hooks/useRestoreAuth";
+
+function AppContent() {
+    useRestoreAuth();
+
+    return <Stack screenOptions={{ headerShown: false }} />;
+}
 
 export default function RootLayout() {
     return (
         <Provider store={store}>
             <SafeAreaProvider>
-                <Stack screenOptions={{ headerShown: false }} />
+                <AppContent />
             </SafeAreaProvider>
         </Provider>
     );

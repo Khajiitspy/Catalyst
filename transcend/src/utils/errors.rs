@@ -6,6 +6,7 @@ pub enum ApiError {
     ValidationError(String),
     Unauthorized,
     InternalServerError,
+    BadRequest,
     // etc
 }
 
@@ -16,6 +17,7 @@ impl fmt::Display for ApiError {
             ApiError::ValidationError(msg) => write!(f, "Validation error: {}", msg),
             ApiError::Unauthorized => write!(f, "Unauthorized"),
             ApiError::InternalServerError => write!(f, "Internal server error"),
+            ApiError::BadRequest => write!(f, "The request is invalid"),
         }
     }
 }

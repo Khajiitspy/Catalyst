@@ -12,7 +12,6 @@ pub struct RegisterUser {
     pub email: String,
     #[validate(length(min = 6, message = "Password must be at least 6 characters"))]
     pub password: String,
-    // For file uploads, you'll need multipart support (see below)
 }
 
 #[derive(Debug, Serialize, Deserialize, Validate)]
@@ -37,4 +36,19 @@ pub struct User {
     pub password_hash: String,
     pub image: Option<String>,
     pub created_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize, Validate)]
+pub struct EditProfileRequest {
+    #[validate(length(min = 1, message = "First name is required"))]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub first_name: Option<String>,
+
+    #[validate(length(min = 1, message = "Last name is required"))]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_name: Option<String>,
+
+    #[validate(email(message = "Email must be valid"))]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
 }

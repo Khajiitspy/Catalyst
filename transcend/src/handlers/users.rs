@@ -1,20 +1,16 @@
-use actix_web::{post, web, HttpResponse};
+use actix_web::{put, post, web, HttpResponse, HttpRequest};
 use validator::Validate;
 use sqlx::PgPool;
 use actix_multipart::Multipart;
-use futures_util::StreamExt;
-use crate::utils::jwt;
 use uuid::Uuid;
-use crate::services::image_service::save_image_variants;
-use futures_util::TryStreamExt;
+use futures_util::{StreamExt, TryStreamExt};
+use log::{error};
 
 use crate::{
+    models::user::{LoginUser, EditProfileRequest, AuthResponse, User},
+    services::image_service::save_image_variants,
+    utils::{errors::ApiError, jwt, password::hash_password},
     db::user_repository::UserRepository,
-    models::user::{LoginUser, AuthResponse},
-    utils::{
-        errors::ApiError,
-        password::hash_password,
-    },
 };
 
 #[post("/Auth/register")]
@@ -47,13 +43,12 @@ pub async fn register(
 
             let mut bytes = Vec::new();
 
-            while let Some(chunk) = field
-                .try_next()
-                .await
-                .map_err(|_| ApiError::InternalServerError)? 
-            {
+            while let Some(chunk_res) = field.next().await {
+                let chunk = chunk_res
+                    .map_err(|_| ApiError::InternalServerError)?;
                 bytes.extend_from_slice(&chunk);
             }
+
 
             save_image_variants(&bytes, &base_name)
                 .map_err(|_| ApiError::InternalServerError)?;
@@ -165,7 +160,140 @@ pub async fn login(
     Ok(HttpResponse::Ok().json(AuthResponse { token }))
 }
 
+#[put("/Auth/profile")]
+pub async fn edit_profile(
+    pool: web::Data<PgPool>,
+    mut payload: Multipart,
+    req: HttpRequest,
+) -> Result<HttpResponse, ApiError> {
+    println!("👉 HIT /Auth/profile");
+
+    // --------------------------------------------------------------
+    // 1️⃣  Authenticate – extract user_id from the JWT
+    // --------------------------------------------------------------
+    let auth_header = req
+        .headers()
+        .get(actix_web::http::header::AUTHORIZATION)
+        .and_then(|h| h.to_str().ok())
+        .ok_or(ApiError::Unauthorized)?;
+
+    let token = auth_header
+        .strip_prefix("Bearer ")
+        .ok_or(ApiError::Unauthorized)?;
+
+    let secret = std::env::var("JWT_SECRET")
+        .expect("JWT_SECRET must be set");
+    let claims = jwt::decode_token(token, &secret)
+        .map_err(|_| ApiError::Unauthorized)?;
+    let user_id = claims.sub; // adjust if your claim uses a different field name
+
+    // --------------------------------------------------------------
+    // 2️⃣  Parse multipart body
+    // --------------------------------------------------------------
+    let mut edit_req = EditProfileRequest {
+        first_name: None,
+        last_name: None,
+        email: None,
+    };
+    let mut new_image_name: Option<String> = None;
+
+    while let Some(field_res) = payload.next().await {
+        let mut field = field_res.map_err(|_| ApiError::InternalServerError)?;
+
+        // // ----- grab disposition and field name (immutable borrow) -----
+        // let disposition = field
+        //     .content_disposition()
+        //     .ok_or(ApiError::ValidationError(
+        //         "Missing content disposition".into(),
+        //     ))?;
+        let cd = field.content_disposition().unwrap();
+        let name = cd.get_name().unwrap_or_default().to_string();
+        // let name = disposition.get_name().unwrap_or_default().to_string();
+        let filename = cd.get_filename().map(|s| s.to_string());
+
+        println!("📦 Field: {} Filename: {:?}", name, filename);
+
+        if name == "imageFile" {
+            let base_name = format!("{}.webp", Uuid::new_v4());
+            let mut bytes = Vec::new();
+            println!("📦 image new name: {}", base_name);
+
+            // Read the whole file into `bytes`
+            while let Some(chunk_res) = field.next().await {
+                let chunk = chunk_res
+                    .map_err(|_| ApiError::InternalServerError)?;
+                bytes.extend_from_slice(&chunk);
+            }
+
+            save_image_variants(&bytes, &base_name)
+                .map_err(|_| ApiError::InternalServerError)?;
+            new_image_name = Some(base_name);
+        }
+        // --------------------------------------------------------------
+        // Text fields
+        // --------------------------------------------------------------
+        else {
+            let mut data = Vec::new();
+
+            while let Some(chunk_res) = field.next().await {
+                let chunk = chunk_res
+                    .map_err(|_| ApiError::InternalServerError)?;
+                data.extend_from_slice(&chunk);
+            }
+
+            let value = String::from_utf8(data)
+                .map_err(|_| ApiError::ValidationError("Invalid UTF‑8".into()))?;
+
+            match name.as_str() {
+                "firstName" => edit_req.first_name = Some(value),
+                "lastName" => edit_req.last_name = Some(value),
+                "email" => edit_req.email = Some(value),
+                _ => {} // ignore unknown fields
+            }
+        }
+    }
+
+    println!(
+        "✅ Parsed: first_name={:?}, last_name={:?}, email={:?}, image={:?}",
+        edit_req.first_name,
+        edit_req.last_name,
+        edit_req.email,
+        new_image_name
+    );
+
+    // --------------------------------------------------------------
+    // 3️⃣  Validate the incoming fields (only those that are Some)
+    // --------------------------------------------------------------
+    edit_req
+        .validate()
+        .map_err(|e| ApiError::ValidationError(e.to_string()))?;
+
+    // --------------------------------------------------------------
+    // 4️⃣  Persist the changes
+    // --------------------------------------------------------------
+    let repo = UserRepository::new(pool.get_ref().clone());
+
+    let updated_user = repo
+        .update_user(user_id, edit_req, new_image_name.as_deref())
+        .await
+        .map_err(|e| {
+            error!("DB error while updating profile: {:?}", e);
+            ApiError::InternalServerError
+        })?;
+
+    // --------------------------------------------------------------
+    // 5️⃣  Create a fresh JWT for the *updated* user
+    // --------------------------------------------------------------
+    let new_token = jwt::create_token(&updated_user, &secret)
+        .map_err(|_| ApiError::InternalServerError)?;
+
+    Ok(HttpResponse::Ok().json(AuthResponse {
+        token: new_token,
+    }))
+}
+
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(register)
-       .service(login);
+       .service(login)
+       .service(edit_profile);
 }

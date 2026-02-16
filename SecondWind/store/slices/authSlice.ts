@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { jwtDecode } from "jwt-decode";
 import { IUserIdentity } from "@/types/auth/IUserIdentity";
+import storage from "@/store/storages/tokenStorage";
 
 interface AuthState {
     user: IUserIdentity | null;
@@ -10,7 +11,6 @@ const getUserFromToken = (token: string): IUserIdentity | null => {
     try {
         const decoded: any = jwtDecode(token);
         return {
-            id: decoded.sub,
             name:
                 decoded["name"] ??
                 decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"] ??
@@ -44,6 +44,7 @@ const authSlice = createSlice({
         },
         logout: (state) => {
             state.user = null;
+            storage.removeItem("token");
         },
     },
 });

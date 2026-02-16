@@ -1,8 +1,7 @@
-use actix_web::{get, post, web, HttpResponse};
+use actix_web::{put, get, post, web, HttpResponse};
 use validator::Validate;
 use sqlx::PgPool;
 use crate::services::chat_service::ChatService;
-use actix_web::put;
 
 use crate::{
     models::chat::{

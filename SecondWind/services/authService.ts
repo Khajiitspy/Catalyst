@@ -3,9 +3,10 @@ import {IAuthResponse} from "@/types/auth/IAuthResponse";
 import {IRegister} from "@/types/auth/IRegister";
 import {createBaseQuery} from "@/utils/createBaseQuery";
 import {ILogin} from "@/types/auth/ILogin";
+import { EditProfileRequest } from '@/types/auth/EditProfileRequest';
 import {serialize} from "object-to-formdata";
 import type {Dispatch} from "@reduxjs/toolkit";
-import {loginSuccess} from "@/store/slices/authSlice";
+import {loginSuccess, updateUser} from "@/store/slices/authSlice";
 
 const handleAuthSuccess = async (
     queryFulfilled: Promise<{ data: {token: string} }>,
@@ -48,6 +49,20 @@ export const authService = createApi({
             },
             onQueryStarted: async (_arg, { dispatch, queryFulfilled }) =>
                 handleAuthSuccess(queryFulfilled, dispatch)
+        }),
+
+        editProfile: builder.mutation<IAuthResponse, IProfileEdit>({
+            query: (credentials) => {
+                const formData =  serialize(credentials);
+
+                return {
+                    url: 'profile',
+                    method: 'PUT',
+                    body: formData
+                };
+            },
+            onQueryStarted: async (_arg, { dispatch, queryFulfilled }) =>
+                handleAuthSuccess(queryFulfilled, dispatch)
         })
 
     })
@@ -55,5 +70,6 @@ export const authService = createApi({
 
 export const {
     useLoginMutation,
-    useRegisterMutation
+    useRegisterMutation,
+    useEditProfileMutation
 } = authService;

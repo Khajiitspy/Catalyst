@@ -74,21 +74,21 @@ export default function RegisterScreen() {
     return (
         <View className="flex-1 bg-zinc-50 dark:bg-zinc-950">
             <StatusBar barStyle="default"/>
-            <LinearGradient
-                colors={["rgba(16,185,129,0.35)", "transparent"]}
-                className="absolute w-full h-[380px] rounded-full blur-[120px]"
-            />
 
             <KeyboardAvoidingView
                 style={{flex: 1}}
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
             >
                 <ScrollView
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"
-                    contentContainerStyle={{paddingBottom: 10}}
+                    contentContainerStyle={{
+                        paddingBottom: 80,
+                        flexGrow: 1,
+                    }}
                 >
-                    <View className="items-center mt-4">
+                <View className="items-center mt-4">
                         <Text className="text-5xl font-black text-zinc-900 dark:text-white tracking-tighter">
                             Реєстрація
                         </Text>
